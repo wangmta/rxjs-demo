@@ -1,0 +1,11 @@
+"use strict";
+var rxjs_1 = require("rxjs");
+var book = 'this is a book, which will be recited';
+var person1$ = new rxjs_1.ReplaySubject(Number.MAX_VALUE);
+var person2$ = new rxjs_1.ReplaySubject(3);
+var readBook$ = rxjs_1.from(book.split(''));
+var subscription1 = readBook$.subscribe(person1$);
+var subscription2 = readBook$.subscribe(person2$);
+// console.log(subscription1);
+console.log(subscription1['destination']['_events']);
+// console.log(subscription2);
