@@ -18,6 +18,7 @@ sourceObservable1$.subscribe(
 );
 
 // or user a subscriber
+// subscriber implements the Observer interface
 let myNumbers = [1, 3, 5];
 let numberObservable$ = new Observable(subscriber => {
   if (myNumbers.length === 0) subscriber.error('No Values.');
