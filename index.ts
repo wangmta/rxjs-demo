@@ -390,3 +390,5 @@ from([1, 2, 3, 4], queueScheduler)
 console.log('End Script');
 
 //#endregion
+
+// mocha and chai is used by rxjs team for testing
