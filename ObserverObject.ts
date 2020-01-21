@@ -1,4 +1,7 @@
 import { of, Observable, Subscriber } from 'rxjs';
+
+// Subscriber VS Observer: A subscriber function receives an Observer object, and can publish values to the observer's next() method.
+
 let myObserver = {
   next: value => console.log(value),
   error: err => console.log(err),

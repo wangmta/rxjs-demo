@@ -1,5 +1,16 @@
 // an Obsrevable is not executed until an object subscribes to it
-import { Observable, Subscriber, throwError, Subject, interval, ConnectableObservable } from 'rxjs';
+import {
+  Observable,
+  Subscriber,
+  throwError,
+  Subject,
+  interval,
+  ConnectableObservable,
+  asapScheduler,
+  asyncScheduler,
+  queueScheduler,
+  merge
+} from 'rxjs';
 // all these functions can create Observables
 import { of, from, concat, fromEvent } from 'rxjs';
 import { allBooks, allReaders } from './data';
@@ -14,10 +25,19 @@ import {
   multicast,
   refCount,
   publish,
-  share
+  share,
+  publishLast,
+  publishBehavior,
+  publishReplay,
+  observeOn
 } from 'rxjs/operators';
+import { AsapScheduler } from 'rxjs/internal/scheduler/AsapScheduler';
+import { async } from 'rxjs/internal/scheduler/async';
 
 //#region Observerables fundamentals
+
+// Subscriber VS Observer: A subscriber function receives an Observer object, and can publish values to the observer's next() method.
+
 // function subscribe(subscriber) {
 //   for (let book of allBooks) {
 //     subscriber.next(book);
@@ -301,33 +321,72 @@ import {
 //   subject$.subscribe(value => console.log(`Observer 3: ${value}`));
 // }, 2000);
 
+//#endregion
+
+//#region Built-in Multicasting operator
 // ----------------------------------------------------------------------------------------------------------------------------use built-in operator
-let source$: any = interval(1000).pipe(
-  take(4),
-  // multicast(new Subject()),
-  // publish(), // publish() creates a subject$ and manage it internally, it's just a thin wrapper around multicast(), need to remove multicase() when use, late subscribers only receives complete()
-  // refCount(), // refCount() starts executing when first Observer subscribes
-  share() // share() allows late subscribers to trigger execution, it internally uses refCount()
-);
+// let source$: any = interval(1000).pipe(
+//   take(4),
+//   // multicast(new Subject()),
+//   // publish(), // publish() creates a subject$ and manage it internally, it's just a thin wrapper around multicast(), need to remove multicase() when use, late subscribers only receives complete()
+//   // publishLast(), // publishLast() wait all values to be produced and make sure only the last value get sent to all observers, late subscriber will receive the value as well
+//   // publishBehavior(42), // publishBehavior(seed) emits the seed immediately, then it behaves the same as publish(), late subscribers only receives complete()
+//   publishReplay(), // publishReplay() stores and emits multiple values to all observers
+//   refCount() // refCount() starts executing when first Observer subscribes, refCount() must be used after publish()/publishLast()
+//   // share() // share() allows late subscribers to trigger execution, it internally uses refCount()
+// );
 
-source$.subscribe(value => console.log(`Observer 1: ${value}`));
+// source$.subscribe(value => console.log(`Observer 1: ${value}`));
 
-setTimeout(() => {
-  source$.subscribe(value => console.log(`Observer 2: ${value}`));
-}, 1000);
+// setTimeout(() => {
+//   source$.subscribe(value => console.log(`Observer 2: ${value}`));
+// }, 1000);
 
-setTimeout(() => {
-  source$.subscribe(value => console.log(`Observer 3: ${value}`));
-}, 2000);
+// setTimeout(() => {
+//   source$.subscribe(value => console.log(`Observer 3: ${value}`));
+// }, 2000);
 
-setTimeout(() => {
-  source$.subscribe(
-    value => console.log(`Observer 4: ${value}`),
-    null,
-    () => console.log(`Observer 4: Complete.`)
-  );
-}, 4500);
+// setTimeout(() => {
+//   source$.subscribe(
+//     value => console.log(`Observer 4: ${value}`),
+//     null,
+//     () => console.log(`Observer 4: Complete.`)
+//   );
+// }, 4500);
 
-// source$.connect(); // must call connect() to start multicasting, this is an ON-OFF switch, or use refCount
+// // source$.connect(); // must call connect() to start multicasting, this is an ON-OFF switch, or use refCount
+
+//#endregion
+
+//#region Schedulers: Controlling Execution
+
+// console.log('Start Script');
+
+// let queue$ = of('QueueScheduler (synchronous)', queueScheduler);
+
+// let asap$ = of('AsapScheduler (async micro task)', asapScheduler); // asap$ executes before async$
+
+// let async$ = of('AsyncScheduler (async task)', asyncScheduler); // async$ runs LAST
+
+// merge(queue$, asap$, async$) // merge OBs to a single OB
+//   .subscribe(value => console.log(value));
+
+// console.log('End Script');
+
+//#endregion
+
+//#region observeOn Operator
+
+console.log('Start Script');
+
+from([1, 2, 3, 4], queueScheduler)
+  .pipe(
+    tap(value => console.log(`Value: ${value}`)),
+    observeOn(asyncScheduler), // this operator passes the OB to the 2nd tap operator, so it will run async-ly, this operator is used for non-blocking tasks
+    tap((value: number) => console.log(`Doubled Value: ${value * 2}`))
+  )
+  .subscribe(); // tap() already handled logging, so no need to call callbacks in subscribe
+
+console.log('End Script');
 
 //#endregion
