@@ -9,7 +9,8 @@ import {
   asapScheduler,
   asyncScheduler,
   queueScheduler,
-  merge
+  merge,
+  combineLatest
 } from 'rxjs';
 // all these functions can create Observables
 import { of, from, concat, fromEvent } from 'rxjs';
@@ -29,10 +30,13 @@ import {
   publishLast,
   publishBehavior,
   publishReplay,
-  observeOn
+  observeOn,
+  map,
+  toArray
 } from 'rxjs/operators';
 import { AsapScheduler } from 'rxjs/internal/scheduler/AsapScheduler';
 import { async } from 'rxjs/internal/scheduler/async';
+import { ReplaySubject } from 'rxjs';
 
 //#region Observerables fundamentals
 
@@ -377,18 +381,49 @@ import { async } from 'rxjs/internal/scheduler/async';
 
 //#region observeOn Operator
 
-console.log('Start Script');
+// console.log('Start Script');
 
-from([1, 2, 3, 4], queueScheduler)
-  .pipe(
-    tap(value => console.log(`Value: ${value}`)),
-    observeOn(asyncScheduler), // this operator passes the OB to the 2nd tap operator, so it will run async-ly, this operator is used for non-blocking tasks
-    tap((value: number) => console.log(`Doubled Value: ${value * 2}`))
-  )
-  .subscribe(); // tap() already handled logging, so no need to call callbacks in subscribe
+// from([1, 2, 3, 4], queueScheduler)
+//   .pipe(
+//     tap(value => console.log(`Value: ${value}`)),
+//     observeOn(asyncScheduler), // this operator passes the OB to the 2nd tap operator, so it will run async-ly, this operator is used for non-blocking tasks
+//     tap((value: number) => console.log(`Doubled Value: ${value * 2}`))
+//   )
+//   .subscribe(); // tap() already handled logging, so no need to call callbacks in subscribe
 
-console.log('End Script');
+// console.log('End Script');
 
 //#endregion
 
 // mocha and chai is used by rxjs team for testing
+
+//#region ReplaySubject
+// let sub$ = new ReplaySubject();
+// let sub$ = new Subject();
+// sub$.next(1);
+// sub$.next(2);
+// sub$.next(3);
+
+// sub$.subscribe(data => {
+//   console.log(data);
+// });
+
+// sub$.next(4);
+// sub$.next(5);
+
+const A$ = interval(2000);
+const B$ = of(3);
+const C$ = from([5, 6, 7]);
+
+const D$ = C$.pipe(
+  toArray(),
+  map(arr => arr.reduce((a, b) => a + b), 0)
+);
+
+const E$ = combineLatest(A$, B$, D$).pipe(
+  take(6),
+  map(arr => arr.reduce((a, b) => a + b), 0)
+);
+
+E$.subscribe(data => console.log(data));
+//#endregion
