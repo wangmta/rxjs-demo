@@ -426,4 +426,13 @@ const E$ = combineLatest(A$, B$, D$).pipe(
 );
 
 E$.subscribe(data => console.log(data));
+
+// const promiseSource$ = from(new Promise(resolve => resolve('data from promise')));
+
+// const sub$ = promiseSource$.subscribe(data => console.log(data));
+
+const promiseSource$ = from(ajax('api/readers').toPromise());
+
+const sub$ = promiseSource$.subscribe(data => console.log(data.response));
+
 //#endregion
