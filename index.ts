@@ -32,7 +32,8 @@ import {
   publishReplay,
   observeOn,
   map,
-  toArray
+  toArray,
+  debounceTime
 } from 'rxjs/operators';
 import { AsapScheduler } from 'rxjs/internal/scheduler/AsapScheduler';
 import { async } from 'rxjs/internal/scheduler/async';
@@ -434,5 +435,26 @@ E$.subscribe(data => console.log(data));
 const promiseSource$ = from(ajax('api/readers').toPromise());
 
 const sub$ = promiseSource$.subscribe(data => console.log(data.response));
+
+//#endregion
+
+//#region DebounceTime
+
+let input = document.getElementById('searchInput');
+
+let input$ = fromEvent(input, 'keyup').pipe(
+  map(event => event.currentTarget['value']),
+  debounceTime(2000)
+);
+
+input$.subscribe(value => {
+  displayValue(value);
+});
+
+function displayValue(value) {
+  let pre = document.createElement('pre');
+  pre.innerHTML = JSON.stringify(value);
+  document.getElementById('results').appendChild(pre);
+}
 
 //#endregion
