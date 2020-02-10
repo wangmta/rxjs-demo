@@ -10,7 +10,10 @@ import {
   asyncScheduler,
   queueScheduler,
   merge,
-  combineLatest
+  combineLatest,
+  BehaviorSubject,
+  timer,
+  forkJoin
 } from 'rxjs';
 // all these functions can create Observables
 import { of, from, concat, fromEvent } from 'rxjs';
@@ -33,7 +36,8 @@ import {
   observeOn,
   map,
   toArray,
-  debounceTime
+  debounceTime,
+  delay
 } from 'rxjs/operators';
 import { AsapScheduler } from 'rxjs/internal/scheduler/AsapScheduler';
 import { async } from 'rxjs/internal/scheduler/async';
@@ -412,49 +416,103 @@ import { ReplaySubject } from 'rxjs';
 // sub$.next(4);
 // sub$.next(5);
 
-const A$ = interval(2000);
-const B$ = of(3);
-const C$ = from([5, 6, 7]);
+// const A$ = interval(2000);
+// const B$ = of(3);
+// const C$ = from([5, 6, 7]);
 
-const D$ = C$.pipe(
-  toArray(),
-  map(arr => arr.reduce((a, b) => a + b), 0)
-);
+// const D$ = C$.pipe(
+//   toArray(),
+//   map(arr => arr.reduce((a, b) => a + b), 0)
+// );
 
-const E$ = combineLatest(A$, B$, D$).pipe(
-  take(6),
-  map(arr => arr.reduce((a, b) => a + b), 0)
-);
+// const E$ = combineLatest(A$, B$, D$).pipe(
+//   take(6),
+//   map(arr => arr.reduce((a, b) => a + b), 0)
+// );
 
-E$.subscribe(data => console.log(data));
+// E$.subscribe(data => console.log(data));
 
 // const promiseSource$ = from(new Promise(resolve => resolve('data from promise')));
 
 // const sub$ = promiseSource$.subscribe(data => console.log(data));
 
-const promiseSource$ = from(ajax('api/readers').toPromise());
+// const promiseSource$ = from(ajax('api/readers').toPromise());
 
-const sub$ = promiseSource$.subscribe(data => console.log(data.response));
+// const sub$ = promiseSource$.subscribe(data => console.log(data.response));
 
 //#endregion
 
 //#region DebounceTime
 
-let input = document.getElementById('searchInput');
+// let input = document.getElementById('searchInput');
 
-let input$ = fromEvent(input, 'keyup').pipe(
-  map(event => event.currentTarget['value']),
-  debounceTime(2000)
-);
+// let input$ = fromEvent(input, 'keyup').pipe(
+//   map(event => event.currentTarget['value']),
+//   debounceTime(2000)
+// );
 
-input$.subscribe(value => {
-  displayValue(value);
-});
+// input$.subscribe(value => {
+//   displayValue(value);
+// });
 
-function displayValue(value) {
-  let pre = document.createElement('pre');
-  pre.innerHTML = JSON.stringify(value);
-  document.getElementById('results').appendChild(pre);
-}
+// function displayValue(value) {
+//   let pre = document.createElement('pre');
+//   pre.innerHTML = JSON.stringify(value);
+//   document.getElementById('results').appendChild(pre);
+// }
 
+// let sub$ = new Subject();
+// sub$.next('BBB');
+
+// sub$.next('CCC');
+// sub$.subscribe(data => console.log(data));
+// sub$.next('DDD');
+
+//#endregion
+
+//#region CombineLatest
+// When any observable emits a value, emit the last emitted value from each.
+// combineLatest will not emit an initial value until each observable emits at least one value.
+
+// starts at 2s, then every 4s
+// let timer1$ = timer(2000, 4000);
+// let timer2$ = timer(4000, 4000);
+// let timer3$ = timer(6000, 4000);
+
+// combineLatest(timer1$, timer2$, timer3$)
+//   .pipe(take(9))
+//   .subscribe(([timer1, timer2, timer3]) => {
+//     console.log(`
+//     Timer 1: ${timer1}
+//     Timer 2: ${timer2}
+//     Timer 3: ${timer3}
+//     `);
+//   });
+
+//#endregion
+
+//#region ForJoin
+// When all observables complete, emit the last emitted value from each.
+// similar to Promise.all
+
+let immediate$ = of('immediate');
+
+let delay2s$ = of('delay 2s').pipe(delay(2000));
+
+let mockPromise = data => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(`Promise Resolved: ${data}`);
+    }, 5000);
+  });
+};
+
+let interval$ = interval(1000).pipe(take(2));
+
+let interval1$ = interval(1000).pipe(take(4));
+
+let fromForkJoin$ = forkJoin(immediate$, delay2s$, mockPromise('promise'), interval$, interval1$);
+
+fromForkJoin$.subscribe(data => console.log(data));
+fromForkJoin$.subscribe(([a, b, c, d, e]) => console.log(c));
 //#endregion
