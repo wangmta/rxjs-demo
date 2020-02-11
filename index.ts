@@ -13,7 +13,8 @@ import {
   combineLatest,
   BehaviorSubject,
   timer,
-  forkJoin
+  forkJoin,
+  race
 } from 'rxjs';
 // all these functions can create Observables
 import { of, from, concat, fromEvent } from 'rxjs';
@@ -37,7 +38,8 @@ import {
   map,
   toArray,
   debounceTime,
-  delay
+  delay,
+  mapTo
 } from 'rxjs/operators';
 import { AsapScheduler } from 'rxjs/internal/scheduler/AsapScheduler';
 import { async } from 'rxjs/internal/scheduler/async';
@@ -495,24 +497,60 @@ import { ReplaySubject } from 'rxjs';
 // When all observables complete, emit the last emitted value from each.
 // similar to Promise.all
 
-let immediate$ = of('immediate');
+// let immediate$ = of('immediate');
 
-let delay2s$ = of('delay 2s').pipe(delay(2000));
+// let delay2s$ = of('delay 2s').pipe(delay(2000));
 
-let mockPromise = data => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(`Promise Resolved: ${data}`);
-    }, 5000);
-  });
-};
+// let mockPromise = data => {
+//   return new Promise(resolve => {
+//     setTimeout(() => {
+//       resolve(`Promise Resolved: ${data}`);
+//     }, 5000);
+//   });
+// };
 
-let interval$ = interval(1000).pipe(take(2));
+// let interval$ = interval(1000).pipe(take(2));
 
-let interval1$ = interval(1000).pipe(take(4));
+// let interval1$ = interval(1000).pipe(take(4));
 
-let fromForkJoin$ = forkJoin(immediate$, delay2s$, mockPromise('promise'), interval$, interval1$);
+// let fromForkJoin$ = forkJoin(immediate$, delay2s$, mockPromise('promise'), interval$, interval1$);
 
-fromForkJoin$.subscribe(data => console.log(data));
-fromForkJoin$.subscribe(([a, b, c, d, e]) => console.log(c));
+// fromForkJoin$.subscribe(data => console.log(data));
+// fromForkJoin$.subscribe(([a, b, c, d, e]) => console.log(c));
 //#endregion
+
+//#region Merge
+// combine stream concurrently
+// let first$ = interval(1000).pipe(mapTo('first'));
+// let second$ = interval(1500).pipe(mapTo('second'));
+// let third$ = interval(2000).pipe(mapTo('third'));
+// let fourth$ = interval(2500).pipe(mapTo('fourth'));
+
+// merge(first$, second$, third$, fourth$)
+//   .pipe(take(12))
+//   .subscribe(value => {
+//     console.log(value);
+//   });
+
+// concat
+// Subscribe to observables in order as previous completes
+
+concat(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9)).subscribe(data => console.log(data));
+
+// race
+// Combining sequences ambiguously. The observable to emit first is used.
+let endStream$ = new Subject();
+setTimeout(() => {
+  endStream$.next('end');
+}, 10000);
+
+race(
+  interval(1500).pipe(mapTo('1st')),
+  interval(1000).pipe(mapTo('Fastest')),
+  interval(2000).pipe(mapTo('3rd')),
+  interval(2500).pipe(mapTo('4th'))
+)
+  .pipe(takeUntil(endStream$))
+  .subscribe(data => console.log(data));
+
+//#region
