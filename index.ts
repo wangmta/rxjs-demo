@@ -39,7 +39,8 @@ import {
   toArray,
   debounceTime,
   delay,
-  mapTo
+  mapTo,
+  concatAll
 } from 'rxjs/operators';
 import { AsapScheduler } from 'rxjs/internal/scheduler/AsapScheduler';
 import { async } from 'rxjs/internal/scheduler/async';
@@ -532,25 +533,33 @@ import { ReplaySubject } from 'rxjs';
 //     console.log(value);
 //   });
 
-// concat
+// concat concatAll
 // Subscribe to observables in order as previous completes
 
-concat(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9)).subscribe(data => console.log(data));
+// concat(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9)).subscribe(data => console.log(data));
+
+let source1$ = interval(1000).pipe(take(5));
+let source2$ = interval(500).pipe(take(2));
+let source3$ = interval(2000).pipe(take(1));
+
+of(source1$, source2$, source3$)
+  .pipe(concatAll())
+  .subscribe(value => console.log(value));
 
 // race
 // Combining sequences ambiguously. The observable to emit first is used.
-let endStream$ = new Subject();
-setTimeout(() => {
-  endStream$.next('end');
-}, 10000);
+// let endStream$ = new Subject();
+// setTimeout(() => {
+//   endStream$.next('end');
+// }, 10000);
 
-race(
-  interval(1500).pipe(mapTo('1st')),
-  interval(1000).pipe(mapTo('Fastest')),
-  interval(2000).pipe(mapTo('3rd')),
-  interval(2500).pipe(mapTo('4th'))
-)
-  .pipe(takeUntil(endStream$))
-  .subscribe(data => console.log(data));
+// race(
+//   interval(1500).pipe(mapTo('1st')),
+//   interval(1000).pipe(mapTo('Fastest')),
+//   interval(2000).pipe(mapTo('3rd')),
+//   interval(2500).pipe(mapTo('4th'))
+// )
+//   .pipe(takeUntil(endStream$))
+//   .subscribe(data => console.log(data));
 
 //#region
